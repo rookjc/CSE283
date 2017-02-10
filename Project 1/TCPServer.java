@@ -1,9 +1,6 @@
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.FileSystems;
@@ -12,21 +9,33 @@ import java.nio.file.Path;
 
 // Simple server that sends a welcome message to a single TCP client.
 public class TCPServer {
-	private static final String SOURCE_FILE_NAME = "testt.txt";
+	private static final String SOURCE_FILE_NAME = "test.txt";
+	private static final int PORT = 12345;
+	
 	public static void main(String[] args) throws IOException {
 		// Don't run the server if the source file doesn't exist
 		if (!verifySourceExists(SOURCE_FILE_NAME))
-			throw new FileNotFoundException("File '" + SOURCE_FILE_NAME + "' not found; server aborted.");
+			System.err.println("File '" + SOURCE_FILE_NAME + "' not found; server aborted.");
 		
-		ServerSocket welcomeSocket = new ServerSocket(12345);
-		Socket helpClient = welcomeSocket.accept();
-		sendFile(SOURCE_FILE_NAME, helpClient.getOutputStream());
+		ServerSocket welcomeSocket = null;
+		Socket helpClient = null;
+		OutputStream out = null;
+		try {
+			welcomeSocket = new ServerSocket(PORT);
+			helpClient = welcomeSocket.accept();
+			out = helpClient.getOutputStream();
+			sendFile(SOURCE_FILE_NAME, out);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (out != null)
+				out.close();
+			if (helpClient != null)
+				helpClient.close();
+			if (welcomeSocket != null)
+				welcomeSocket.close();
+		}
 		
-		/*PrintWriter out = new PrintWriter(helpClient.getOutputStream());
-		out.println("Hi, there. Welcome to CSE283");
-		out.close();*/
-		helpClient.close();
-		welcomeSocket.close();
 	}
 	
 	// Copy the file at path fileName into the output stream
@@ -34,7 +43,6 @@ public class TCPServer {
 		Path filePath = FileSystems.getDefault().getPath(fileName);
 		try {
 			Files.copy(filePath, os);
-			os.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
