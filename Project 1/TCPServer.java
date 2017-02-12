@@ -7,35 +7,66 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-// Simple server that sends a welcome message to a single TCP client.
-public class TCPServer {
-	private static final String SOURCE_FILE_NAME = "test.txt";
+/**
+ * Simple TCP Server that sends a file to connecting clients. Implements the
+ * Runnable interface and multi-threading to service multiple clients at a time.
+ * 
+ * @author Jayson Rook (rookjc@miamioh.edu)
+ */
+public class TCPServer implements Runnable {
+	private static final String SOURCE_FILE_NAME = "video.mp4";
 	private static final int PORT = 12345;
 	
-	public static void main(String[] args) throws IOException {
+	// The socket associated with an instance (a single connected client)
+	private Socket socket;
+	
+	
+	public static void main(String[] args) {
 		// Don't run the server if the source file doesn't exist
-		if (!verifySourceExists(SOURCE_FILE_NAME))
+		if (!verifySourceExists(SOURCE_FILE_NAME)) {
 			System.err.println("File '" + SOURCE_FILE_NAME + "' not found; server aborted.");
+			return;
+		}
+
+		try {
+			ServerSocket welcomeSocket = new ServerSocket(PORT);
+			while (true) {
+				Socket helpClient = welcomeSocket.accept();
+				System.out.println("Connection!");
+				new Thread(new TCPServer(helpClient)).start();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		
-		ServerSocket welcomeSocket = null;
-		Socket helpClient = null;
+	}
+	
+	@Override
+	public void run() {
 		OutputStream out = null;
 		try {
-			welcomeSocket = new ServerSocket(PORT);
-			helpClient = welcomeSocket.accept();
-			out = helpClient.getOutputStream();
+			out = this.socket.getOutputStream();
 			sendFile(SOURCE_FILE_NAME, out);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			if (out != null)
-				out.close();
-			if (helpClient != null)
-				helpClient.close();
-			if (welcomeSocket != null)
-				welcomeSocket.close();
+			if (out != null) {
+				try {
+					out.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			try {
+				this.socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
-		
+	}
+	
+	public TCPServer(Socket helpClient) {
+		this.socket = helpClient;
 	}
 	
 	// Copy the file at path fileName into the output stream
@@ -52,4 +83,5 @@ public class TCPServer {
 		File f = new File(fileName);
 		return f.exists();
 	}
+
 }
