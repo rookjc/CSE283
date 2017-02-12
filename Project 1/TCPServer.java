@@ -30,9 +30,10 @@ public class TCPServer implements Runnable {
 
 		try {
 			ServerSocket welcomeSocket = new ServerSocket(PORT);
+			// Loop forever, each time a new client connects
 			while (true) {
 				Socket helpClient = welcomeSocket.accept();
-				System.out.println("Connection!");
+				// Process the file transfer in another thread
 				new Thread(new TCPServer(helpClient)).start();
 			}
 		} catch (Exception e) {
@@ -41,6 +42,9 @@ public class TCPServer implements Runnable {
 		
 	}
 	
+	/**
+	 * Sends the file at SOURCE_FILE_NAME to the this.socket stream
+	 */
 	@Override
 	public void run() {
 		OutputStream out = null;
@@ -50,6 +54,7 @@ public class TCPServer implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
+			// Try to close output stream if it exists
 			if (out != null) {
 				try {
 					out.close();
@@ -57,28 +62,46 @@ public class TCPServer implements Runnable {
 					e.printStackTrace();
 				}
 			}
+			// Try to close this.socket
 			try {
 				this.socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-	}
+		
+	} // end run method
 	
+	/**
+	 * Constructor to create a Runnable instance, for threading
+	 * 
+	 * @param helpClient the socket this instance will serve
+	 */
 	public TCPServer(Socket helpClient) {
 		this.socket = helpClient;
 	}
 	
-	// Copy the file at path fileName into the output stream
+	/**
+	 * Copy the file at path fileName into the output stream
+	 * 
+	 * @param fileName the name of the file to send
+	 * @param os the stream to send the file into
+	 */
 	public static void sendFile(String fileName, OutputStream os) {
 		Path filePath = FileSystems.getDefault().getPath(fileName);
 		try {
+			// Uses java.nio.file.Files.copy to handle copying from path to stream
 			Files.copy(filePath, os);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	/**
+	 * Determine whether the file given by fileName exists
+	 * @param fileName the file to check for
+	 * @return true iff the file exists
+	 */
 	public static boolean verifySourceExists(String fileName) {
 		File f = new File(fileName);
 		return f.exists();
