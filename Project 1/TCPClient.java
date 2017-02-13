@@ -39,7 +39,7 @@ public class TCPClient {
 			in = client.getInputStream();
 			receiveFile(client.getInputStream(), destFileName);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.err.println(e);
 		} finally {
 			// Close stream and socket, if either created successfully
 			if (in != null)
@@ -62,7 +62,7 @@ public class TCPClient {
 			// Uses java.nio.file.Files.copy to handle copying from stream to path
 			Files.copy(is, filePath, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println(e);
 		}
 	}
 

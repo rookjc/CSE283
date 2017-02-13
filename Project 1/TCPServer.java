@@ -14,13 +14,18 @@ import java.nio.file.Path;
  * @author Jayson Rook (rookjc@miamioh.edu)
  */
 public class TCPServer implements Runnable {
-	private static final String SOURCE_FILE_NAME = "video.mp4";
+	private static final String SOURCE_FILE_NAME = "data.txt";
 	private static final int PORT = 12345;
 	
 	// The socket associated with an instance (a single connected client)
 	private Socket socket;
 	
-	
+	/**
+	 * Creates a welcome socket, that stays open as the server loops forever.
+	 * Whenever a client connects, it is served (sent the file) from a new thread.
+	 * 
+	 * @param args No command-line arguments used
+	 */
 	public static void main(String[] args) {
 		// Don't run the server if the source file doesn't exist
 		if (!verifySourceExists(SOURCE_FILE_NAME)) {
@@ -29,6 +34,7 @@ public class TCPServer implements Runnable {
 		}
 
 		try {
+			@SuppressWarnings("resource")	// welcomeSocket never closes due to infinite loop
 			ServerSocket welcomeSocket = new ServerSocket(PORT);
 			// Loop forever, each time a new client connects
 			while (true) {
@@ -37,7 +43,7 @@ public class TCPServer implements Runnable {
 				new Thread(new TCPServer(helpClient)).start();
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.err.println(e);
 		}
 		
 	}
@@ -52,21 +58,21 @@ public class TCPServer implements Runnable {
 			out = this.socket.getOutputStream();
 			sendFile(SOURCE_FILE_NAME, out);
 		} catch (Exception e) {
-			e.printStackTrace();
+			System.err.println(e);
 		} finally {
 			// Try to close output stream if it exists
 			if (out != null) {
 				try {
 					out.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					System.err.println(e);
 				}
 			}
 			// Try to close this.socket
 			try {
 				this.socket.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println(e);
 			}
 		}
 		
@@ -93,7 +99,7 @@ public class TCPServer implements Runnable {
 			// Uses java.nio.file.Files.copy to handle copying from path to stream
 			Files.copy(filePath, os);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println(e);
 		}
 	}
 	
